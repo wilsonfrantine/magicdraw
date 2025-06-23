@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MagicDraw - Sorteio Moderno</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="center-content">
+    <section class="resultado-area">
+      <div class="animacao-fogos" id="animacaoFogos"></div>
+      <div class="numero-grande" id="numeroSorteado"></div>
+      <div class="nome-grande" id="nomeSorteado"></div>
+      <div class="btn-area">
+        <button id="sortearBtn" type="button" onclick="sortear()" class="sortear-btn">Sortear!</button>
+      </div>
+    </section>
+  </main>
+  <aside class="configuracoes-bottom" id="configuracoes">
+    <button id="toggleConfigBtn" type="button" title="Ocultar/Exibir painel de configurações">−</button>
+    <form id="entrada-form" onsubmit="return false;">
+      <textarea id="nomes" placeholder="Insira nomes separados por vírgula OU uma por linha"></textarea>
+      <input type="file" id="csvfile" accept=".csv"/>
+      <div class="input-row">
+        <label>
+          <input type="checkbox" id="noRepeat" checked> Não repetir nomes
+        </label>
+        <label>
+          Sorteios: <input type="number" id="nSorteios" min="1" value="1" style="width:60px;">
+        </label>
+      </div>
+    </form>
+    <div class="sorteados-lista-container">
+      <h2>Sorteados</h2>
+      <ul id="sorteadosLista"></ul>
+      <button id="exportarBtn" type="button" onclick="exportarCSV()">Exportar resultados</button>
+      <button id="resetBtn" type="button">Zerar Sorteio</button>
+    </div>
+  </aside>
+  <script src="script.js"></script>
+</body>
+</html>
