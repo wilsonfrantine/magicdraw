@@ -130,7 +130,7 @@ drawBtn.addEventListener('click', () => {
     loadingDiv.classList.add('hidden');
     realizarSorteio();
     iniciarCortina();            // retoma cortina
-  }, 3000);
+  }, 4300);
 });
 
 /* ---------- lógica ---------- */
