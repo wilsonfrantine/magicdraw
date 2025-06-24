@@ -200,3 +200,20 @@ document.addEventListener('keydown', e => {
     e.preventDefault(); drawBtn.click();
   }
 });
+let inactivityTimer = null;
+const INACTIVITY_LIMIT = 3 * 60 * 1000; // 3 minutos
+
+function resetInactivityTimer() {
+  if (document.documentElement.scrollTop < window.innerHeight / 2) return; // já está na splash
+  clearTimeout(inactivityTimer);
+  inactivityTimer = setTimeout(() => {
+    scrollTo(splashSec);
+    bgAudio.pause();
+    pararCortina();
+  }, INACTIVITY_LIMIT);
+}
+
+['click', 'mousemove', 'keydown', 'touchstart'].forEach(evt =>
+  document.addEventListener(evt, resetInactivityTimer)
+);
+
