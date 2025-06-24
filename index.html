@@ -1,43 +1,69 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
   <meta charset="UTF-8">
+  <title>MagicDraw – Sorteio</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MagicDraw - Sorteio Moderno</title>
   <link rel="stylesheet" href="style.css">
 </head>
-<body>
-  <main class="center-content">
-    <section class="resultado-area">
-      <div class="animacao-fogos" id="animacaoFogos"></div>
-      <div class="numero-grande" id="numeroSorteado"></div>
-      <div class="nome-grande" id="nomeSorteado"></div>
-      <div class="btn-area">
-        <button id="sortearBtn" type="button" onclick="sortear()" class="sortear-btn">Sortear!</button>
+<body class="dark">
+  <!-- Botão tema -->
+  <div id="themeToggle" title="Alternar tema">🌙</div>
+
+  <!-- 1️⃣ CONFIGURAÇÕES -->
+  <section class="section" id="configSection">
+    <h1>Configurações do Sorteio</h1>
+
+    <input type="file" id="csvfile" accept=".csv">
+    <textarea id="nomes"
+      placeholder="Cole nomes separados por vírgula ou quebra de linha"></textarea>
+
+    <label><input type="checkbox" id="noRepeat" checked> Não repetir nomes</label>
+    <label>Qtd. por sorteio:
+      <input type="number" id="nSorteios" value="1" min="1">
+    </label>
+
+    <label><input type="checkbox" id="toggleMusic" checked> Música de fundo</label>
+    <label><input type="checkbox" id="toggleEffects" checked> Efeitos sonoros</label>
+    <label><input type="checkbox" id="showOrder" checked> Mostrar nº sorteado</label>
+
+    <button id="startBtn">Iniciar Sorteio</button>
+  </section>
+
+  <!-- 2️⃣ SORTEIO -->
+  <section class="section" id="drawSection">
+    <h2>Sorteio</h2>
+
+    <div id="drawArea">
+      <div id="loading" class="hidden">Preparando sorteio...</div>
+
+      <div id="resultArea" class="hidden">
+        <div id="numberDisplay"></div>
+        <div id="nameDisplay"></div>
+        <div id="fireworks"></div>
       </div>
-    </section>
-  </main>
-  <aside class="configuracoes-bottom" id="configuracoes">
-    <button id="toggleConfigBtn" type="button" title="Ocultar/Exibir painel de configurações">−</button>
-    <form id="entrada-form" onsubmit="return false;">
-      <textarea id="nomes" placeholder="Insira nomes separados por vírgula OU uma por linha"></textarea>
-      <input type="file" id="csvfile" accept=".csv"/>
-      <div class="input-row">
-        <label>
-          <input type="checkbox" id="noRepeat" checked> Não repetir nomes
-        </label>
-        <label>
-          Sorteios: <input type="number" id="nSorteios" min="1" value="1" style="width:60px;">
-        </label>
-      </div>
-    </form>
-    <div class="sorteados-lista-container">
-      <h2>Sorteados</h2>
-      <ul id="sorteadosLista"></ul>
-      <button id="exportarBtn" type="button" onclick="exportarCSV()">Exportar resultados</button>
-      <button id="resetBtn" type="button">Zerar Sorteio</button>
+
+      <button id="drawBtn">Sortear</button>
     </div>
-  </aside>
+  </section>
+
+  <!-- 3️⃣ RESULTADOS -->
+  <section class="section" id="resultsSection">
+    <h2>Resultados</h2>
+    <ul id="sorteadosList"></ul>
+
+    <div id="buttonGroup">
+      <button id="backBtn">⚙️ Configurar</button>
+      <button id="exportBtn">📄 Exportar CSV</button>
+      <button id="resetBtn">🔄 Zerar</button>
+    </div>
+  </section>
+
+  <!-- Áudio -->
+  <audio id="bgAudio"   loop src="assets/background.mp3"></audio>
+  <audio id="prepAudio"      src="assets/prep.mp3"></audio>
+  <audio id="winAudio"       src="assets/win.mp3"></audio>
+
   <script src="script.js"></script>
 </body>
 </html>

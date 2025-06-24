@@ -1,136 +1,202 @@
-let nomesOriginais = [];
-let nomesDisponiveis = [];
-let sorteados = [];
-let sortCount = 0;
-let nSorteios = 1;
+/* ========== ÁUDIO ========== */
+const bgAudio   = document.getElementById('bgAudio');
+const prepAudio = document.getElementById('prepAudio');
+const winAudio  = document.getElementById('winAudio');
 
-// Importação de nomes via CSV
-document.getElementById('csvfile').addEventListener('change', function(e){
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function(evt) {
-    const text = evt.target.result;
-    const nomes = text.split(/,|\n/).map(s => s.trim()).filter(Boolean);
-    document.getElementById('nomes').value = nomes.join(', ');
-  };
-  reader.readAsText(file);
+/* ========== ELEMENTOS / CONTROLES ========== */
+const configSec  = document.getElementById('configSection');
+const drawSec    = document.getElementById('drawSection');
+const resultsSec = document.getElementById('resultsSection');
+
+const startBtn  = document.getElementById('startBtn');
+const drawBtn   = document.getElementById('drawBtn');
+const backBtn   = document.getElementById('backBtn');
+const exportBtn = document.getElementById('exportBtn');
+const resetBtn  = document.getElementById('resetBtn');
+
+const nomesTA   = document.getElementById('nomes');
+const csvInput  = document.getElementById('csvfile');
+
+const noRepeatCB   = document.getElementById('noRepeat');
+const nSorteiosIN  = document.getElementById('nSorteios');
+const toggleMusic  = document.getElementById('toggleMusic');
+const toggleFX     = document.getElementById('toggleEffects');
+const showOrderCB  = document.getElementById('showOrder');
+
+const loadingDiv = document.getElementById('loading');
+const resultArea = document.getElementById('resultArea');
+const numberDisp = document.getElementById('numberDisplay');
+const nameDisp   = document.getElementById('nameDisplay');
+const fireworks  = document.getElementById('fireworks');
+const listUL     = document.getElementById('sorteadosList');
+
+const themeToggle = document.getElementById('themeToggle');
+
+/* ========== ESTADO ========== */
+let nomesOrig = [], nomesDisp = [], sorteados = [];
+let sortCount = 0;
+let confeteTimer = null;           // 〰️ gerador contínuo
+
+/* ========== TEMAS ========== */
+themeToggle.addEventListener('click', () => {
+  document.body.classList.toggle('light');
+  document.body.classList.toggle('dark');
+  themeToggle.textContent = document.body.classList.contains('light') ? '🌞' : '🌙';
 });
 
-function sortear() {
-  if (sortCount === 0) {
-    // Prepara lista ao iniciar sorteio
-    let entrada = document.getElementById('nomes').value;
-    nomesOriginais = entrada.split(/,|\n/).map(s => s.trim()).filter(Boolean);
-    nomesDisponiveis = [...nomesOriginais];
-    sorteados = [];
-    document.getElementById('sorteadosLista').innerHTML = '';
-    sortCount = 0;
+/* ========== LOAD CSV PADRÃO ========== */
+fetch('assets/nomes_inscritos.csv')
+ .then(r => r.text())
+ .then(t => {
+   nomesTA.value = t.split(/,|\n/).map(s => s.trim()).filter(Boolean).join(', ');
+ }).catch(() => {});
+
+/* ========== UPLOAD CSV ========= */
+csvInput.addEventListener('change', e => {
+  const f = e.target.files[0]; if (!f) return;
+  const fr = new FileReader();
+  fr.onload = ev => {
+    nomesTA.value = ev.target.result.split(/,|\n/)
+                   .map(s => s.trim()).filter(Boolean).join(', ');
+  };
+  fr.readAsText(f);
+});
+
+/* ========== AJUDANTES ========= */
+const scrollTo = el => el.scrollIntoView({ behavior: 'smooth' });
+
+const resetVisual = () => {
+  numberDisp.textContent = '';
+  nameDisp.textContent   = '';
+  nameDisp.classList.remove('slide');
+  resultArea.classList.add('hidden');
+  loadingDiv.classList.add('hidden');
+  fireworks.innerHTML = '';
+};
+
+/* 💦 cortina contínua de confetes ----------------------- */
+function iniciarCortina() {
+  pararCortina();
+  confeteTimer = setInterval(() => {
+    const c = document.createElement('span');
+    c.className = 'confete';
+    c.style.left = Math.random() * 100 + 'vw';
+    c.style.background = `hsl(${Math.random()*360},90%,60%)`;
+    fireworks.appendChild(c);
+    c.addEventListener('animationend', () => c.remove());
+  }, 120); // ~8 bolinhas/seg
+}
+function pararCortina() {
+  if (confeteTimer) {
+    clearInterval(confeteTimer);
+    confeteTimer = null;
   }
+}
+/* ------------------------------------------------------- */
 
-  nSorteios = parseInt(document.getElementById('nSorteios').value) || 1;
-  const noRepeat = document.getElementById('noRepeat').checked;
+/* ========== INICIAR (vai para tela 2) ========= */
+startBtn.addEventListener('click', () => {
+  const txt = nomesTA.value.trim();
+  if (!txt) { alert('Insira pelo menos um nome!'); return; }
 
-  if (nomesDisponiveis.length === 0) {
-    showResult('Fim!', 'Lista esgotada!', 0);
-    return;
+  nomesOrig = txt.split(/,|\n/).map(s => s.trim()).filter(Boolean);
+  nomesDisp = [...nomesOrig]; sorteados = []; sortCount = 0;
+  listUL.innerHTML = ''; resetVisual();
+
+  if (toggleMusic.checked && bgAudio.paused) {
+    bgAudio.volume = 0.4; bgAudio.play().catch(() => {});
   }
+  iniciarCortina();             // começa fundo animado
+  scrollTo(drawSec);
+});
 
-  for (let i = 0; i < nSorteios && nomesDisponiveis.length > 0; i++) {
-    let idx = Math.floor(Math.random() * nomesDisponiveis.length);
-    let nome = nomesDisponiveis[idx];
+/* ← voltar */
+backBtn.addEventListener('click', () => scrollTo(configSec));
 
-    showResult(sortCount + 1, nome, sortCount + 1);
+/* ========== SORTEAR ========= */
+drawBtn.addEventListener('click', () => {
+  if (toggleMusic.checked && bgAudio.paused) {
+    bgAudio.volume = 0.4; bgAudio.play().catch(() => {});
+  }
+  if (!nomesDisp.length) { alert('Lista esgotada!'); return; }
 
-    if (noRepeat) {
-      nomesDisponiveis.splice(idx, 1);
-    }
+  pararCortina();                // pausa durante suspense
+  resetVisual();
+  
+  loadingDiv.classList.remove('hidden');
+  if (toggleFX.checked) { prepAudio.currentTime = 0; prepAudio.play().catch(() => {}); }
+
+  setTimeout(() => {
+    loadingDiv.classList.add('hidden');
+    realizarSorteio();
+    iniciarCortina();            // retoma cortina
+  }, 3000);
+});
+
+/* ---------- lógica ---------- */
+function realizarSorteio() {
+  const qtd   = +nSorteiosIN.value || 1;
+  const noRep = noRepeatCB.checked;
+
+  for (let i = 0; i < qtd && nomesDisp.length; i++) {
+    const idx  = Math.floor(Math.random() * nomesDisp.length);
+    const nome = nomesDisp[idx];
+    exibirResultado(nome, sortCount + 1);
+    if (noRep) nomesDisp.splice(idx, 1);
     sorteados.push(nome);
-    addSorteadoToList(nome, sortCount + 1);
-
+    adicionarNaLista(nome, sortCount + 1);
     sortCount++;
   }
 }
 
-function showResult(numero, nome, ordem) {
-  document.getElementById('numeroSorteado').textContent = numero;
-  document.getElementById('nomeSorteado').textContent = nome;
-
-  // animação confetes
-  const animFogos = document.getElementById('animacaoFogos');
-  animFogos.innerHTML = '';
-  for (let i = 0; i < 14; i++) {
-    let confete = document.createElement('div');
-    confete.className = 'confete';
-    confete.style.left = (10 + i*17) + "px";
-    confete.style.top = "0px";
-    confete.style.background = `hsl(${30*i+80}, 92%, 62%)`;
-    confete.style.animation = `confeteDrop 1s ${i*0.07}s cubic-bezier(.68,-0.6,.32,1.6)`;
-    animFogos.appendChild(confete);
+function exibirResultado(nome, ordem) {
+  numberDisp.textContent = showOrderCB.checked ? ordem : '';
+  nameDisp.textContent   = nome;
+  nameDisp.classList.add('slide');
+  resultArea.classList.remove('hidden');
+  //explodirConfetesPontual();
+  if (toggleFX.checked) { winAudio.currentTime = 0; winAudio.play().catch(() => {}); }
+}
+/*
+function explodirConfetesPontual() {
+  for (let i = 0; i < 16; i++) {
+    const c = document.createElement('span');
+    c.className = 'confete';
+    c.style.left = (i * 18) + 'px';
+    c.style.background = `hsl(${i * 22 + 60}, 90%, 60%)`;
+    c.style.animationDelay = `${i * 0.05}s`;
+    fireworks.appendChild(c);
+    c.addEventListener('animationend', () => c.remove());
   }
 }
-
-function addSorteadoToList(nome, ordem) {
-  const ul = document.getElementById('sorteadosLista');
-  let li = document.createElement('li');
+*/
+/* ---------- lista / exportar ---------- */
+function adicionarNaLista(nome, ordem) {
+  const li = document.createElement('li');
   li.textContent = `${ordem}. ${nome}`;
-  ul.appendChild(li);
+  listUL.appendChild(li);
 }
-
-function exportarCSV() {
-  if (sorteados.length === 0) return;
-  let csv = sorteados.map((n, i) => `"${i+1}","${n}"`).join('\n');
-  let blob = new Blob([csv], { type: 'text/csv' });
-  let url = URL.createObjectURL(blob);
-
-  let a = document.createElement('a');
-  a.href = url;
-  a.download = 'sorteados.csv';
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
+exportBtn.addEventListener('click', () => {
+  if (!sorteados.length) return;
+  const csv  = sorteados.map((n, i) => `"${i + 1}","${n}"`).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url  = URL.createObjectURL(blob);
+  const a    = Object.assign(document.createElement('a'), { href: url, download: 'sorteados.csv' });
+  document.body.appendChild(a); a.click(); a.remove();
   URL.revokeObjectURL(url);
-}
-
-// Reset ao alterar nomes, quantidade ou opção de repetição
-['nomes','nSorteios','noRepeat'].forEach(id =>
-  document.getElementById(id).addEventListener('input', resetSorteio)
-);
-
-function resetSorteio() {
-  sortCount = 0;
-  document.getElementById('numeroSorteado').textContent = '';
-  document.getElementById('nomeSorteado').textContent = '';
-  document.getElementById('animacaoFogos').innerHTML = '';
-  document.getElementById('sorteadosLista').innerHTML = '';
-  sorteados = [];
-}
-
-// Botão minimizar painel de configuração
-const configPanel = document.getElementById('configuracoes');
-const toggleBtn = document.getElementById('toggleConfigBtn');
-toggleBtn.addEventListener('click', function() {
-  configPanel.classList.toggle('minimizado');
-  if (configPanel.classList.contains('minimizado')) {
-    toggleBtn.textContent = '+';
-    configPanel.style.pointerEvents = 'auto'; // mantém botão clicável
-    configPanel.style.opacity = 0.8;
-  } else {
-    toggleBtn.textContent = '−';
-    configPanel.style.pointerEvents = '';
-    configPanel.style.opacity = '';
-  }
 });
 
-// Botão zerar sorteio
-document.getElementById('resetBtn').addEventListener('click', function() {
-  nomesOriginais = [];
-  nomesDisponiveis = [];
-  sorteados = [];
-  sortCount = 0;
-  document.getElementById('numeroSorteado').textContent = '';
-  document.getElementById('nomeSorteado').textContent = '';
-  document.getElementById('animacaoFogos').innerHTML = '';
-  document.getElementById('sorteadosLista').innerHTML = '';
-  document.getElementById('nomes').value = '';
+/* ---------- zerar ---------- */
+resetBtn.addEventListener('click', () => {
+  nomesOrig = nomesDisp = []; sorteados = []; sortCount = 0;
+  nomesTA.value = ''; listUL.innerHTML = ''; resetVisual();
+  pararCortina();
+});
+
+/* ---------- tecla Enter ---------- */
+document.addEventListener('keydown', e => {
+  if (e.key === 'Enter' &&
+      !['TEXTAREA', 'INPUT'].includes(document.activeElement.tagName)) {
+    e.preventDefault(); drawBtn.click();
+  }
 });
