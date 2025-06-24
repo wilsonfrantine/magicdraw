@@ -134,14 +134,3 @@ document.getElementById('resetBtn').addEventListener('click', function() {
   document.getElementById('sorteadosLista').innerHTML = '';
   document.getElementById('nomes').value = '';
 });
-// Carregar CSV automaticamente ao abrir
-fetch('assets/Nome inscritos.csv')
-  .then(response => response.text())
-  .then(text => {
-    const nomes = text.split(/,|\n/).map(s => s.trim()).filter(Boolean);
-    document.getElementById('nomes').value = nomes.join(', ');
-  })
-  .catch(err => {
-    // Opcional: notifica caso o CSV não exista ainda
-    //console.log('Arquivo de nomes não encontrado.', err);
-  });
