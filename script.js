@@ -2,11 +2,21 @@
 const bgAudio   = document.getElementById('bgAudio');
 const prepAudio = document.getElementById('prepAudio');
 const winAudio  = document.getElementById('winAudio');
+const musicToggle   = document.getElementById('musicToggle');
+const effectsToggle = document.getElementById('effectsToggle');
 
 /* ========== ELEMENTOS / CONTROLES ========== */
+const fullscreenToggle = document.getElementById('fullscreenToggle');
+const drawToggle = document.getElementById('drawToggle');
+const configToggle = document.getElementById('configBtn');
+const resultsToggle = document.getElementById('resultsToggle');
+const menuToggle = document.getElementById('menuToggle');
 const configSec  = document.getElementById('configSection');
 const drawSec    = document.getElementById('drawSection');
+const homeSec  = document.getElementById('homeSection');
+const resultsSecToggle = document.getElementById('resultsToggle');
 const resultsSec = document.getElementById('resultsSection');
+const menuContent = document.getElementById('menuContent');
 
 const startBtn  = document.getElementById('startBtn');
 const drawBtn   = document.getElementById('drawBtn');
@@ -32,16 +42,28 @@ const listUL     = document.getElementById('sorteadosList');
 
 const themeToggle = document.getElementById('themeToggle');
 
+const updateIcons = () => {
+  musicToggle.innerHTML   = musicEnabled   ? '<img src="/assets/music_on.png">'     : '<img src="/assets/music_off.png">';
+  effectsToggle.innerHTML = effectsEnabled ? '<img src="/assets/effects_on.png">'   : '<img src="/assets/effects_off.png">';
+  fullscreenToggle.innerHTML = document.fullscreenElement
+    ? '<img src="/assets/fullscreen_off.png">'
+    : '<img src="/assets/fullscreen.png">';
+};
+
+
+
 /* ========== ESTADO ========== */
 let nomesOrig = [], nomesDisp = [], sorteados = [];
 let sortCount = 0;
-let confeteTimer = null;           // 〰️ gerador contínuo
+let confeteTimer = null;           
+let musicEnabled   = toggleMusic.checked;
+let effectsEnabled = toggleFX.checked;
 
 /* ========== TEMAS ========== */
 themeToggle.addEventListener('click', () => {
   document.body.classList.toggle('light');
   document.body.classList.toggle('dark');
-  themeToggle.textContent = document.body.classList.contains('light') ? '🌞' : '🌙';
+  //themeToggle.textContent = document.body.classList.contains('light') ? '🌞' : '🌙';
 });
 
 /* ========== LOAD CSV PADRÃO ========== */
@@ -62,7 +84,7 @@ csvInput.addEventListener('change', e => {
   fr.readAsText(f);
 });
 
-/* ========== AJUDANTES ========= */
+/* ========== HELPERS ========= */
 const scrollTo = el => el.scrollIntoView({ behavior: 'smooth' });
 
 const resetVisual = () => {
@@ -74,7 +96,7 @@ const resetVisual = () => {
   fireworks.innerHTML = '';
 };
 
-/* 💦 cortina contínua de confetes ----------------------- */
+/* -------- ANIMAÇÕES --------- */
 function iniciarCortina() {
   pararCortina();
   confeteTimer = setInterval(() => {
@@ -92,6 +114,18 @@ function pararCortina() {
     confeteTimer = null;
   }
 }
+
+function animateName(text) {
+  nameDisplay.innerHTML = '';
+
+  text.split('').forEach((char, i) => {
+    const span = document.createElement('span');
+    span.textContent = char;
+    span.style.animationDelay = `${i * 0.05}s`;
+    nameDisplay.appendChild(span);
+  });
+}
+
 /* ------------------------------------------------------- */
 
 /* ========== INICIAR (vai para tela 2) ========= */
@@ -104,23 +138,32 @@ startBtn.addEventListener('click', () => {
   listUL.innerHTML = ''; resetVisual();
 
   if (toggleMusic.checked && bgAudio.paused) {
-    bgAudio.volume = 0.4; bgAudio.play().catch(() => {});
+    bgAudio.volume = 0.1; bgAudio.play().catch(() => {});
   }
-  iniciarCortina();             // começa fundo animado
+  iniciarCortina(); 
   scrollTo(drawSec);
+
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(err => {
+      console.warn('Erro ao entrar em fullscreen:', err);
+    });
+  }
+  start();
 });
 
-/* ← voltar */
-backBtn.addEventListener('click', () => scrollTo(configSec));
+backBtn.addEventListener('click', () => {  scrollTo(homeSec); });
 
 /* ========== SORTEAR ========= */
 drawBtn.addEventListener('click', () => {
+  start();
+});
+function start() {
   if (toggleMusic.checked && bgAudio.paused) {
-    bgAudio.volume = 0.4; bgAudio.play().catch(() => {});
+    bgAudio.volume = 0.1; bgAudio.play().catch(() => {});
   }
-  if (!nomesDisp.length) { alert('Lista esgotada!'); return; }
+  if (!nomesDisp.length) { alert('Lista Esgotada ou Vazia! Carregue novos nomes ou reinicie a lista'); return; }
 
-  pararCortina();                // pausa durante suspense
+  pararCortina();
   resetVisual();
   
   loadingDiv.classList.remove('hidden');
@@ -129,9 +172,22 @@ drawBtn.addEventListener('click', () => {
   setTimeout(() => {
     loadingDiv.classList.add('hidden');
     realizarSorteio();
-    iniciarCortina();            // retoma cortina
-  }, 4300);
-});
+    iniciarCortina();
+  }, 4600);
+}
+
+function formatNomeAnimado(str) {
+  const palavras = str.trim().split(/\s+/);
+  return palavras.map((palavra, i) => {
+    if (palavra.length <= 3) {
+      return i === 0
+        ? palavra.charAt(0).toUpperCase() + palavra.slice(1).toLowerCase()
+        : palavra.toLowerCase();
+    }
+    return palavra.charAt(0).toUpperCase() + palavra.slice(1).toLowerCase();
+  }).join('  ');
+}
+
 
 /* ---------- lógica ---------- */
 function realizarSorteio() {
@@ -140,7 +196,7 @@ function realizarSorteio() {
 
   for (let i = 0; i < qtd && nomesDisp.length; i++) {
     const idx  = Math.floor(Math.random() * nomesDisp.length);
-    const nome = nomesDisp[idx];
+    const nome = formatNomeAnimado(nomesDisp[idx]);
     exibirResultado(nome, sortCount + 1);
     if (noRep) nomesDisp.splice(idx, 1);
     sorteados.push(nome);
@@ -151,25 +207,12 @@ function realizarSorteio() {
 
 function exibirResultado(nome, ordem) {
   numberDisp.textContent = showOrderCB.checked ? ordem : '';
-  nameDisp.textContent   = nome;
-  nameDisp.classList.add('slide');
+  animateName(nome);
   resultArea.classList.remove('hidden');
   //explodirConfetesPontual();
   if (toggleFX.checked) { winAudio.currentTime = 0; winAudio.play().catch(() => {}); }
 }
-/*
-function explodirConfetesPontual() {
-  for (let i = 0; i < 16; i++) {
-    const c = document.createElement('span');
-    c.className = 'confete';
-    c.style.left = (i * 18) + 'px';
-    c.style.background = `hsl(${i * 22 + 60}, 90%, 60%)`;
-    c.style.animationDelay = `${i * 0.05}s`;
-    fireworks.appendChild(c);
-    c.addEventListener('animationend', () => c.remove());
-  }
-}
-*/
+
 /* ---------- lista / exportar ---------- */
 function adicionarNaLista(nome, ordem) {
   const li = document.createElement('li');
@@ -201,13 +244,13 @@ document.addEventListener('keydown', e => {
   }
 });
 let inactivityTimer = null;
-const INACTIVITY_LIMIT = 3 * 60 * 1000; // 3 minutos
+const INACTIVITY_LIMIT = 2 * 60 * 1000;
 
 function resetInactivityTimer() {
-  if (document.documentElement.scrollTop < window.innerHeight / 2) return; // já está na splash
+  if (document.documentElement.scrollTop < window.innerHeight / 2) return;
   clearTimeout(inactivityTimer);
   inactivityTimer = setTimeout(() => {
-    scrollTo(splashSec);
+    scrollTo(homeSec);
     bgAudio.pause();
     pararCortina();
   }, INACTIVITY_LIMIT);
@@ -216,4 +259,77 @@ function resetInactivityTimer() {
 ['click', 'mousemove', 'keydown', 'touchstart'].forEach(evt =>
   document.addEventListener(evt, resetInactivityTimer)
 );
+
+/* ---------- CONTROLE DE AUDIO ---------- */
+
+musicToggle.addEventListener('click', () => {
+  musicEnabled = !musicEnabled;
+  toggleMusic.checked = musicEnabled;
+  updateIcons();
+  musicToggle.classList.toggle('off', !musicEnabled);
+
+  if (musicEnabled) {
+    bgAudio.volume = 0.1;
+    bgAudio.play().catch(() => {});
+  } else {
+    bgAudio.pause();
+  }
+});
+
+effectsToggle.addEventListener('click', () => {
+  effectsEnabled = !effectsEnabled;
+  toggleFX.checked = effectsEnabled;
+  updateIcons();
+  if (effectsEnabled) {
+    prepAudio.volume = 0.7;
+    winAudio.volume = 0.7;
+  } else {
+    prepAudio.volume = 0;
+    winAudio.volume = 0;
+  }
+});
+
+menuToggle.addEventListener('click', () => {
+  menuContent.classList.toggle('collapsed');
+  menuToggle.classList.toggle('collapsed');
+})
+
+drawToggle.addEventListener('click', () => {
+  if (!drawSec.classList.contains('hidden')) {
+    scrollTo(drawSec);
+  } else {
+    resetVisual();
+    pararCortina();
+  }
+});
+resultsToggle.addEventListener('click', () => {
+  if (!resultsSec.classList.contains('hidden')) {
+    scrollTo(resultsSec);
+  } else {
+    resetVisual();
+    pararCortina();
+  }
+});
+configToggle.addEventListener('click', () => {
+  if (!configSec.classList.contains('hidden')) {
+    scrollTo(configSec);
+  } else {
+    resetVisual();
+    pararCortina();
+  }
+});  
+
+fullscreenToggle.addEventListener('click', () => {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen().catch(err => {
+      console.warn(`Erro ao entrar em fullscreen: ${err.message}`);
+    });
+  } else {
+    document.exitFullscreen().catch(err => {
+      console.warn(`Erro ao sair do fullscreen: ${err.message}`);
+    });
+  }
+});
+
+document.addEventListener('fullscreenchange', updateIcons);
 

@@ -1,18 +1,73 @@
 *{margin:0;padding:0;box-sizing:border-box}
+html{
+  scroll-snap-type: y mandatory;
+  scroll-behavior:1s ease-in-out;
+}
+body::-webkit-scrollbar {
+  display: none;
+  overflow: hidden;
+  zoom:150%;
+}
 body{
   font-family:'Segoe UI',sans-serif;
-  font-size: 125%;
   background:#1a1a1a;color:#eee;
-  scroll-behavior:smooth;
-  transition:background .4s,color .4s
+  transition:background .4s,color .4s;
+  scrollbar-width: 0px; /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer and Edge */
 }
 body.light{background:#f2f2f2;color:#111}
 .section{
-  min-height:100vh;padding:4rem 2rem;
-  display:flex;flex-direction:column;
-  justify-content:center;align-items:center;
-  text-align:center
+  height: 100vh;
+  min-height:100vh;
+  padding:4rem 2rem;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  text-align:center;
+  scroll-snap-align: start;
 }
+nav {
+  position: fixed;
+  top: 10px;
+  right: 12px;
+  font-size: 1rem;
+  z-index: 20;
+  display: flex;
+}
+nav div {
+  cursor: pointer;
+}
+
+#menuContent {
+  display: flex;
+  overflow: hidden;
+  transition: transform 0.5s ease;
+}
+
+#menuContent.collapsed {
+  transform: translateX(90%);
+}
+
+#menuToggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.5s ease;
+}
+#menuToggle.collapsed {
+  transform: rotate(90deg);
+}
+
+
+nav div img {
+  width: auto;
+  height: 35px;
+  transition: transform 0.3s;
+  padding: 5px;
+}
+
+
 /* ---------- campos ---------- */
 textarea{
   width:90%;max-width:650px;height:150px;
@@ -31,43 +86,99 @@ button{
 }
 button:hover{background:#4850d4}
 #buttonGroup{display:flex;flex-wrap:wrap;gap:1rem;margin-top:2rem;justify-content:center}
+
+
 /* ---------- sorteio ---------- */
 #drawArea{display:flex;flex-direction:column;align-items:center;gap:3rem}
-#numberDisplay{font-size:4rem;font-weight:700;margin-bottom:.5rem}
-#nameDisplay{
-  font-size:3rem;font-weight:bold;white-space:nowrap;overflow:hidden;
-  animation:slidein 2s steps(30,end) forwards;border-right:3px solid
+#numberDisplay{font-size:6rem;font-weight:700;margin-bottom:.5rem; display:none}
+
+#nameDisplay {
+  font-size: 8rem;
+  font-weight: bold;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.1em;
+  line-height: 1.2;
+  word-break: keep-all;
+  overflow-wrap: break-word;
+  max-width: 100%;
+  justify-content: center;
+  align-items: center;
+  margin: auto;
+  letter-spacing: -0.9rem;
 }
+
+#nameDisplay span {
+  opacity: 0;
+  transform: translateY(-50px);
+  display: inline-block;
+  animation: fadeInUp 1s forwards;
+}
+
+@keyframes fadeInUp {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+
+#gCenter {
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: girar 5s ease-out infinite;
+  transform: translateX(30px);
+}
+
+@keyframes girar {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(3600deg); }
+}
+
+#roleta-container {
+  width: 300px;
+  margin: auto;
+}
+
 @keyframes slidein{0%{width:0}100%{width:100%}}
-#loading{font-size:1.6rem;margin-top:2rem;animation:pulse 1s infinite}
-@keyframes pulse{0%{opacity:.3}50%{opacity:1}100%{opacity:.3}}
+#loading span{
+  font-size:4rem;
+  margin-top:2rem;
+  animation:pulse 1s infinite
+}
+@keyframes pulse{
+  0%{opacity:.3}
+  50%{opacity:1}
+  100%{opacity:.3}
+}
 #fireworks{position:relative;height:60px;margin-top:2rem}
 .confete{
   position:absolute;width:12px;height:12px;border-radius:50%;
   animation:drop 1s ease-out forwards
 }
 @keyframes drop{to{transform:translateY(60px);opacity:0}}
+
+
 /* ---------- lista ---------- */
 #sorteadosList{list-style:none;margin-top:2rem;padding:0;font-size:1.3rem}
 #sorteadosList li{background:#ffffff22;border-radius:8px;padding:.6rem 1rem;margin:.25rem 0}
+
 /* ---------- tema ---------- */
-#themeToggle{
-  position:fixed;top:10px;right:12px;font-size:1.7rem;cursor:pointer;z-index:20
-}
+
 /* util */
 .hidden{display:none}
 #fireworks{
-  position: fixed;          /* fica atrás de tudo */
+  position: fixed;  
   left: 0; top: 0;
   width: 100vw;
   height: 100vh;
   pointer-events: none;
   overflow: hidden;
-  z-index: -1;              /* atrás do conteúdo */
+  z-index: -1; 
 }
 .confete{
   position: absolute;
-  width: 14px;              /* já 25 % maiores */
+  width: 14px;
   height: 14px;
   border-radius: 50%;
   opacity: .9;
@@ -85,32 +196,7 @@ button:hover{background:#4850d4}
   50%      { transform: translateY(-10%); }
 }
 
-#nameDisplay {
-  font-size: 3rem;
-  font-weight: bold;
-  white-space: nowrap;
-  overflow: hidden;
-  border-right: 3px solid;
-  display: inline-block;
-}
-
-/* Cursor visível e piscante */
-#nameDisplay.cursor::after {
-  content: '';
-  display: inline-block;
-  width: 1ch;
-  height: 1em;
-  margin-left: 2px;
-  background: currentColor;
-  animation: blink 0.75s step-end infinite;
-  vertical-align: bottom;
-}
-
-@keyframes blink {
-  50% { opacity: 0; }
-}
-
-#splashSection {
+#homeSection {
   position: relative;
   overflow: hidden;
 }
